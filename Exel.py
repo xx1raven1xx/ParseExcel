@@ -11,18 +11,15 @@ start_time = time.time()
 
 print('Начинаем обработку данных...')
 
-'''
-Поздний вход 8,00 - 8,30 (20,00 - 20,30)
-Плюс к позднему входу нужно проверять не входил ли этот человек на ТЗПМ!
-Ранний выход 16,00 - 17,00 (19,00 - 20,00)
-Отсутствие на рабочем месте 
-            между входом и выходом >20 минут (8,00 - 17,00.  8,00 - 20,00.  20,00 - 8,00.)
-            так же не должно учитываться время обеда (12,00 - 13,00)
-            так же люди уходят на ТЗПМ обедать раньше 12,00 (как вообще это считать???)
-
-'''
 #при встрече в ячейке времени значения 00:00:00 выдавал ошибку по типу данных 'TipeError'
 
+FillR = PatternFill(start_color='00fcd4d1',
+                   end_color='FFFF0000',
+                   fill_type='solid')
+FillY = PatternFill(start_color='00fffbcc',
+                   end_color='FFFF0000',
+                   fill_type='solid')
+Color1 = True
 
 
 A0 = datetime.time(0, 00, 00)
@@ -51,13 +48,17 @@ Destination = 9
 
 
 #Сохраняет в список нужные нам данные и потом сам список сохраняется в файл
-def sv(ws, dt, tm, kpp, pst, nm, dst, o, reserv=''):
-#активный лист, дата, время, имя, порядковый номер
+def sv(ws, dt, tm, kpp, pst, nm, dst, o, reserv='', Paint = False):
+#активный лист, дата, время, кпп, должность, имя, подразделение, порядковый номер, резерв
+    global Color1
+    a = o + 1
     o = str(o)
+    a = str(a)
     ca = 'A' + o
     cb = 'B' + o
     cc = 'C' + o
     cd = 'D' + o
+    cd1 = 'D' + a
     ce = 'E' + o
     cf = 'F' + o
     cg = 'G' + o
@@ -69,7 +70,18 @@ def sv(ws, dt, tm, kpp, pst, nm, dst, o, reserv=''):
     ws[cf] = dst
     ws[cg] = reserv
     o = int(o)
+    if Paint:
+        if pst == 'ВЫХОД':
+            if Color1:
+                ws[cd].fill = FillR
+                ws[cd1].fill = FillR
+                Color1 = False
+            else:
+                ws[cd].fill = FillY
+                ws[cd1].fill = FillY
+                Color1 = True
 
+#ws1['A1'].fill = FillR
 #возвращает самую первую отметку 'ВХОД' или 'ВЫХОД' в этот день
 def ft(name, date, start=1):
     #нужно считать день, время и смотреть самую раннюю отметку в данный день. Возвращает ВХОД или ВЫХОД.
@@ -78,13 +90,11 @@ def ft(name, date, start=1):
     for i in range(start, ws.max_row-1):
         if cell_range[i][FIO].value == name:
             if cell_range[i][0].value == date:
-                #print (i, a,'---', cell_range[i][Time_in_sheet].value) 
                 if a > cell_range[i][Time_in_sheet].value:
                     a = cell_range[i][Time_in_sheet].value
                     b = cell_range[i][InOut].value
                     
         else:
-            #print(' начало в ---->', start,  '<--->', i)
             break
             
     return b
@@ -102,7 +112,6 @@ def et(name, date, start=1):
                     b = cell_range[i][InOut].value
                     
         else:
-            #print(' Итераций---->', i)
             break
             
     return b
@@ -186,11 +195,6 @@ h1 = 1
 f = 1
 for i in range(2,ws.max_row-1):
     start1 = time.time()
-    '''
-    При переваливании времени с 23 часов за 00 часов, скрипт считает что 00 меньше 23. (что в принципе логично)
-    Нужно сделать так что бы скрипт считал именно промежуток в 20 минут, невзирая на то обстоятельство что время перевалило за полночь.
-    '''
-    
     i1 = i - 1
     endtime = datetime.datetime.combine(datetime.datetime.strptime(cell_range[i1+1][Date_in_sheet].value, '%Y.%m.%d').date(), cell_range[i1+1][Time_in_sheet].value)
     starttime = datetime.datetime.combine(datetime.datetime.strptime(cell_range[i1][Date_in_sheet].value, '%Y.%m.%d').date(), cell_range[i1][Time_in_sheet].value)
@@ -200,12 +204,10 @@ for i in range(2,ws.max_row-1):
             if cell_range[i1+1][InOut].value == 'ВХОД':
                 if cell_range[i1][Date_in_sheet].value == cell_range[i1+1][Date_in_sheet].value:
                     if STED > datetime.timedelta(minutes = 20):
-                        sv(ws7, cell_range[i1][Date_in_sheet].value, cell_range[i1][Time_in_sheet].value,cell_range[i1][KPP].value, cell_range[i1+1][Time_in_sheet].value,cell_range[i1+1][KPP].value, cell_range[i1][Work_post].value,f, cell_range[i1][FIO].value)
+                        sv(ws7, cell_range[i1][Date_in_sheet].value, cell_range[i1][Time_in_sheet].value,cell_range[i1][KPP].value, cell_range[i1][InOut].value, cell_range[i1][Work_post].value, cell_range[i1][FIO].value, f, Paint = True)
                         f += 1
-                        #sv(ws7, cell_range[i1+1][Date_in_sheet].value, cell_range[i1+1][Time_in_sheet].value, cell_range[i1+1][KPP].value,cell_range[i1+1][InOut].value, cell_range[i1+1][Work_post].value, cell_range[i1+1][FIO].value, f)
-                        #f += 1
-
-
+                        sv(ws7, cell_range[i1+1][Date_in_sheet].value, cell_range[i1+1][Time_in_sheet].value, cell_range[i1+1][KPP].value,cell_range[i1+1][InOut].value, cell_range[i1+1][Work_post].value, cell_range[i1+1][FIO].value, f)
+                        f += 1
 
     if cell_range[i][0].value == cell_range[i-1][0].value:          #если дата и предыдущая дата равны то пропустить один цикл???  накуя я это написал то???
         #print('test')
@@ -216,42 +218,36 @@ for i in range(2,ws.max_row-1):
     cellPST = cell_range[i][Work_post].value        # Должность
     cellFIO = cell_range[i][FIO].value              # ФИО
     cellDST = cell_range[i][Destination].value      # Подразделение
-    fist_time = ft(cellFIO, cellDAY, i)
-    min1 = minT(cellFIO, cellDAY, i)
-    end_time = et(cellFIO, cellDAY, i)
-    max1 = maxT(cellFIO, cellDAY, i)
+    fist_time = ft(cellFIO, cellDAY, i)             # Первая отметка
+    min1 = minT(cellFIO, cellDAY, i)                # Минимальное время входа
+    end_time = et(cellFIO, cellDAY, i)              # Последняя отметка
+    max1 = maxT(cellFIO, cellDAY, i)                # Максимальное время выхода
     
     #поздний вход 08,00 - 08,30
     if fist_time == 'ВХОД':
         if min1 >= A8 and min1 <= A830:
-            #print(min1, ' >= ', A20, ' and ', min1, '<=', A2030)
             sv(ws1, cellDAY, min1, cellKPP, cellPST, cellFIO, cellDST, l)
             l += 1
         #поздний вход 20,00 - 20,30
         elif min1 >= A20 and min1 <= A2030:
-            #print('1')
             sv(ws2, cellDAY, min1, cellKPP, cellPST, cellFIO, cellDST, k)
             k += 1
     #ранний выход 16,00 - 17,00
     if end_time == 'ВЫХОД':
         if max1 <= A17 and max1 >= A16:
-            #print(max1, ' <= ', A17, ' and ', max1, '>=', A16)
-            sv(ws3, cellDAY, min1, cellKPP, cellPST, cellFIO, cellDST, j)
+            sv(ws3, cellDAY, max1, cellKPP, cellPST, cellFIO, cellDST, j)
             j += 1
         #ранний выход 17,00 - 17,05
         elif max1 <= A1705 and max1 >= A17:
-            #print('3')
-            sv(ws5, cellDAY, min1, cellKPP, cellPST, cellFIO, cellDST, j1)
+            sv(ws5, cellDAY, max1, cellKPP, cellPST, cellFIO, cellDST, j1)
             j1 += 1
         #ранний выход 19,00 - 20,00
         elif max1 <= A20 and max1 >= A19:
-            #print('4')
-            sv(ws4, cellDAY, min1, cellKPP, cellPST, cellFIO, cellDST, h)
+            sv(ws4, cellDAY, max1, cellKPP, cellPST, cellFIO, cellDST, h)
             h += 1
         #ранний выход 20,00 - 20,05
         elif max1 <= A2005 and max1 >= A20:
-            #print('5')
-            sv(ws6, cellDAY, min1, cellKPP, cellPST, cellFIO, cellDST, h1)
+            sv(ws6, cellDAY, max1, cellKPP, cellPST, cellFIO, cellDST, h1)
             h1 += 1
 
     end1 = time.time()
@@ -264,10 +260,8 @@ for i in range(2,ws.max_row-1):
 
 
 #перед сохранением ОБЯЗАТЕЛЬНО закрыть файл в Офисе.
-#wb.save(filename = 'D:/test.xlsx')      #обязательно для сохранения данных.
 
-
-#Я в душе не ябу как сделать короче данный кусок кода. Может быть с помощью функции exec()
+#Я в душе не **у как сделать короче данный кусок кода. Может быть с помощью функции exec()
 ws1.column_dimensions['A'].width = (10*2.3)/1.96
 ws1.column_dimensions['C'].width = (10*3.6)/1.96
 ws1.column_dimensions['D'].width = (10*10.4)/1.96
@@ -305,11 +299,11 @@ ws6.column_dimensions['E'].width = (10*6.9)/1.96
 ws6.column_dimensions['F'].width = (10*7.9)/1.96
 
 ws7.column_dimensions['A'].width = (10*2.3)/1.96
-ws7.column_dimensions['C'].width = (10*2.4)/1.96
-ws7.column_dimensions['D'].width = (10*1.9)/1.96
-ws7.column_dimensions['E'].width = (10*2.9)/1.96
-ws7.column_dimensions['F'].width = (10*7.9)/1.96
-ws7.column_dimensions['G'].width = (10*6.8)/1.96
+ws7.column_dimensions['C'].width = (10*2.9)/1.96
+ws7.column_dimensions['D'].width = (10*1.7)/1.96
+ws7.column_dimensions['E'].width = (10*7.9)/1.96
+ws7.column_dimensions['F'].width = (10*6.8)/1.96
+ws7.column_dimensions['G'].width = (10*1.7)/1.96
 
 '''
 redFill = PatternFill(start_color='000000FF',
@@ -317,6 +311,7 @@ redFill = PatternFill(start_color='000000FF',
                    fill_type='solid')
 ws1['A1'].fill = redFill
 '''
+
 wb1.save('result.xlsx')
 print("--- %s секунд ---" % (time.time() - start_time))
 print('ВЫПОЛНЕНО.')
