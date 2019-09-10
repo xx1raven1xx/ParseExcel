@@ -9,7 +9,8 @@ sound_path = "D:\\python\\ParseEXEL\\beep.wav"
 
 start_time = time.time()
 
-print('Начинаем обработку данных...')
+print('Подготовьте файл с именем и расширением data.xlsx.')
+input('Далее нажмите ENTER.')
 
 #при встрече в ячейке времени значения 00:00:00 выдавал ошибку по типу данных 'TipeError'
 
@@ -81,7 +82,6 @@ def sv(ws, dt, tm, kpp, pst, nm, dst, o, reserv='', Paint = False):
                 ws[cd1].fill = FillY
                 Color1 = True
 
-#ws1['A1'].fill = FillR
 #возвращает самую первую отметку 'ВХОД' или 'ВЫХОД' в этот день
 def ft(name, date, start=1):
     #нужно считать день, время и смотреть самую раннюю отметку в данный день. Возвращает ВХОД или ВЫХОД.
@@ -146,10 +146,17 @@ def maxT(name, date, start=1):
 
 
 
+try:
+    wb = openpyxl.load_workbook(filename = 'data.xlsx', read_only=True)
+except:
+    print('Проверте файл!!!')
+    input('Нажмите ENTER.')
+    sys.exit()
 
-wb = openpyxl.load_workbook(filename = 'data.xlsx', read_only=True)
 #sheet = wb['Лист1']                     #по сути одно и то же что и 
 ws = wb.active                          #это
+
+print('Начинаем обработку данных...')
 
 wb1 = Workbook()
 wsss = wb1.active 
@@ -182,9 +189,7 @@ ws7 = wb1['20_MIN']
 #row7 = ws[7]
 cell_range = ws['a1':'j'+str(ws.max_row-1)]
 #сам кортеж не изменяемый, но вот списки в нем... Или это не списки а обьекты?
-print('Файл имеет ', ws.max_row-1, ' строк')
-
-
+print('Файл имеет ', ws.max_row-1, ' строк \n')
 
 l = 1
 k = 1
@@ -193,6 +198,7 @@ h = 1
 j1 = 1
 h1 = 1
 f = 1
+
 for i in range(2,ws.max_row-1):
     start1 = time.time()
     i1 = i - 1
@@ -255,10 +261,6 @@ for i in range(2,ws.max_row-1):
     sys.stdout.flush()
 
 
-
-#print (et('Эскандеров Алексей Владимирович','2018.11.16'))
-
-
 #перед сохранением ОБЯЗАТЕЛЬНО закрыть файл в Офисе.
 
 #Я в душе не **у как сделать короче данный кусок кода. Может быть с помощью функции exec()
@@ -305,15 +307,10 @@ ws7.column_dimensions['E'].width = (10*7.9)/1.96
 ws7.column_dimensions['F'].width = (10*6.8)/1.96
 ws7.column_dimensions['G'].width = (10*1.7)/1.96
 
-'''
-redFill = PatternFill(start_color='000000FF',
-                   end_color='FFFF0000',
-                   fill_type='solid')
-ws1['A1'].fill = redFill
-'''
 
 wb1.save('result.xlsx')
-print("--- %s секунд ---" % (time.time() - start_time))
+print("\n--- %s секунд ---" % (time.time() - start_time))
 print('ВЫПОЛНЕНО.')
+print('Файл result.xlsx содержит обработанные данные.')
 winsound.PlaySound(sound_path, winsound.SND_FILENAME)
 input('Обработка окончена. Нажмите ENTER.')
